@@ -1,18 +1,42 @@
-//
-//  VueNotesCours.swift
-//  StudentHub
-//
-//  Created by Gauthier Baudelet on 5/26/26.
-//
-
 import SwiftUI
 
 struct VueNotesCours: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
-}
+    let code: String
+    @State private var notes: [NoteCours] = []
+    @State private var nouveauTexte: String = ""
 
-#Preview {
-    VueNotesCours()
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("Notes personnelles").font(.headline)
+            
+            List {
+                ForEach(notes) { note in
+                    Text(note.texte)
+                        .padding(.vertical, 4)
+                }
+            }
+            .frame(height: 200)
+            
+            HStack {
+                TextField("Nouvelle note...", text: $nouveauTexte)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                Button("Ajouter") {
+                    let nouvelleNote = NoteCours(texte: nouveauTexte, dateCreation: Date())
+                    notes.append(nouvelleNote)
+                    // La sauvegarde sera déclenchée automatiquement par le onChange
+                    nouveauTexte = ""
+                }
+                .disabled(nouveauTexte.isEmpty)
+            }
+        }
+        .onAppear {
+            // Chargement initial
+            self.notes = NoteManager.chargerNotes(pour: code)
+        }
+        // Correction ici pour Xcode récent :
+        .onChange(of: notes) { oldVal, newVal in
+            NoteManager.sauvegarderNotes(pour: code, notes: newVal)
+        }
+    }
 }
