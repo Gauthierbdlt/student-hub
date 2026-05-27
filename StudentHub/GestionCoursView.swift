@@ -360,6 +360,9 @@ struct PopoverParametresCours: View {
     @State private var texteCM: String = ""
     @State private var texteTP: String = ""
 
+    @State private var creditsRequisTexte: String = ""
+    @State private var creditsAcquisTexte: String = ""
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
 
@@ -406,6 +409,51 @@ struct PopoverParametresCours: View {
                                     onRefresh()
                                 }
                             Text("séances").font(.caption).foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+
+            // ── Crédits ────────────────────────────────────────────────
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Crédits du cours", systemImage: "graduationcap").font(.subheadline).bold()
+                HStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Requis").font(.caption).foregroundColor(.secondary)
+                        HStack(spacing: 4) {
+                            TextField("ex: 5", text: $creditsRequisTexte)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 60)
+                                .onAppear {
+                                    let val = UserDefaults.standard.integer(forKey: "credits_requis_\(niveau)_\(quadri)_\(code)")
+                                    creditsRequisTexte = val == 0 && UserDefaults.standard.object(forKey: "credits_requis_\(niveau)_\(quadri)_\(code)") == nil ? "" : String(val)
+                                }
+                                .onChange(of: creditsRequisTexte) { _, nv in
+                                    let f = nv.filter { $0.isNumber }; creditsRequisTexte = f
+                                    let val = Int(f) ?? 0
+                                    UserDefaults.standard.set(val, forKey: "credits_requis_\(niveau)_\(quadri)_\(code)")
+                                    onRefresh()
+                                }
+                            Text("ECTS").font(.caption).foregroundColor(.secondary)
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Obtenus").font(.caption).foregroundColor(.secondary)
+                        HStack(spacing: 4) {
+                            TextField("ex: 3", text: $creditsAcquisTexte)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 60)
+                                .onAppear {
+                                    let val = UserDefaults.standard.integer(forKey: "credits_acquis_\(niveau)_\(quadri)_\(code)")
+                                    creditsAcquisTexte = val == 0 && UserDefaults.standard.object(forKey: "credits_acquis_\(niveau)_\(quadri)_\(code)") == nil ? "" : String(val)
+                                }
+                                .onChange(of: creditsAcquisTexte) { _, nv in
+                                    let f = nv.filter { $0.isNumber }; creditsAcquisTexte = f
+                                    let val = Int(f) ?? 0
+                                    UserDefaults.standard.set(val, forKey: "credits_acquis_\(niveau)_\(quadri)_\(code)")
+                                    onRefresh()
+                                }
+                            Text("ECTS").font(.caption).foregroundColor(.secondary)
                         }
                     }
                 }
@@ -477,6 +525,9 @@ struct VueInterneDetailCours: View {
     @State private var notes: [NoteCours] = []
     @State private var nouveauTexte: String = ""
 
+    @State private var creditsRequis: Int = 0
+    @State private var creditsAcquis: Int = 0
+
     let types = ["Tous", "CM", "TP", "Devoir", "Examen"]
 
     init(code: String, evenementsIcalBruts: [ÉvénementCours], niveau: String, quadri: String) {
@@ -491,6 +542,10 @@ struct VueInterneDetailCours: View {
         let cleCM = "nb_cm_\(niveau)_\(quadri)_\(code)"
         let stockeCM = UserDefaults.standard.integer(forKey: cleCM)
         self._maxCMs = State(initialValue: stockeCM == 0 && UserDefaults.standard.object(forKey: cleCM) == nil ? 12 : stockeCM)
+        let cReq = UserDefaults.standard.integer(forKey: "credits_requis_\(niveau)_\(quadri)_\(code)")
+        self._creditsRequis = State(initialValue: cReq)
+        let cAcq = UserDefaults.standard.integer(forKey: "credits_acquis_\(niveau)_\(quadri)_\(code)")
+        self._creditsAcquis = State(initialValue: cAcq)
     }
 
     var body: some View {
@@ -505,6 +560,15 @@ struct VueInterneDetailCours: View {
                         Text(code).font(.largeTitle).bold()
                         if !nomDuCoursTrouve.isEmpty {
                             Text(nomDuCoursTrouve).font(.title3).foregroundColor(.secondary)
+                        }
+                        HStack(spacing: 8) {
+                            Label("Crédits", systemImage: "graduationcap").font(.caption).foregroundColor(.secondary)
+                            Text("\(creditsAcquis) / \(creditsRequis) ECTS")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                                .background((creditsRequis > 0 && creditsAcquis >= creditsRequis) ? Color.green.opacity(0.15) : Color.blue.opacity(0.12))
+                                .foregroundColor((creditsRequis > 0 && creditsAcquis >= creditsRequis) ? .green : .blue)
+                                .cornerRadius(6)
                         }
                     }
                     Spacer()
@@ -745,6 +809,8 @@ struct VueInterneDetailCours: View {
         chargerEvenementsPerso()
         tpsTrouves = GestionnaireFichiers.analyserContenu(niveau: niveau, quadri: quadri, code: code, type: "TP", jusqua: maxTPs)
         cmsTrouves = GestionnaireFichiers.analyserContenu(niveau: niveau, quadri: quadri, code: code, type: "CM", jusqua: maxCMs)
+        creditsRequis = UserDefaults.standard.integer(forKey: "credits_requis_\(niveau)_\(quadri)_\(code)")
+        creditsAcquis = UserDefaults.standard.integer(forKey: "credits_acquis_\(niveau)_\(quadri)_\(code)")
         refreshID = UUID()
     }
 
@@ -1154,3 +1220,4 @@ struct FlowLayout: Layout {
         }
     }
 }
+
