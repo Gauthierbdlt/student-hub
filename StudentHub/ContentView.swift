@@ -5,6 +5,7 @@
 
 import SwiftUI
 
+
 enum NavigationItem: String, CaseIterable, Identifiable {
     case accueil    = "Accueil"
     case cours      = "Cours"
